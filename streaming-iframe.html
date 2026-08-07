@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artist Streaming Studio (Production)</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            position: relative;
+        }
+
+        /* Production indicator */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6, #ef4444);
+            background-size: 200% 100%;
+            animation: gradient-shift 3s ease-in-out infinite;
+            z-index: 1000;
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        /* Header */
+        .streaming-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .streaming-header h1 {
+            margin: 0;
+            background: linear-gradient(45deg, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.8rem;
+            font-weight: 700;
+            position: relative;
+        }
+
+        .streaming-header h1::after {
+            content: "PROD";
+            position: absolute;
+            top: -6px;
+            right: -45px;
+            background: #ef4444;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 3px;
+            letter-spacing: 0.5px;
+        }
+
+        .stream-status {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6b7280;
+        }
+
+        /* Production Camera System Status */
+        .camera-system-status {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .camera-system-status.initializing {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: 1px solid #2563eb;
+        }
+
+        .camera-system-status.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: 1px solid #047857;
+        }
+
+        .camera-system-status.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border: 1px solid #b91c1c;
+        }
+
+        .camera-system-status .status-icon {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .camera-system-status .status-content {
+            flex: 1;
+        }
+
+        .camera-system-status .status-content p {
+            margin: 0 0 6px 0;
+        }
+
+        .camera-system-status .permission-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            opacity: 0.9;
+            font-size: 12px;
+        }
+
+        .camera-system-status .retry-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .camera-system-status .retry-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .camera-system-status .diagnostic-info {
+            margin-top: 12px;
+            opacity: 0.8;
+        }
+
+        .camera-system-status .diagnostic-info details {
+            cursor: pointer;
+        }
+
+        .camera-system-status .diagnostic-info summary {
+            font-size: 12px;
+            padding: 4px 0;
+            user-select: none;
+        }
+
+        .camera-system-status .diagnostic-info pre {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            line-height: 1.3;
+            margin-top: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Main Layout */
+        .streaming-main {
+            display: grid;
+            grid-template-columns: 350px 1fr 320px;
+            gap: 1rem;
+            padding: 1rem 2rem;
+            height: calc(100vh - 80px);
+            overflow: hidden;
+        }
+
+        /* Left Panel */
+        .stream-setup-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .setup-section {
+            margin-bottom: 2rem;
+            width: 100%;
+            position: relative;
+            clear: both;
+        }
+
+        .setup-section h3 {
+            margin: 0 0 1rem 0;
+            color: #8b5cf6;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+            width: 100%;
+            clear: both;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #e5e7eb;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+            color: #ffffff;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-help {
+            display: block;
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        /* Stream Controls */
+        .stream-controls {
+            margin-top: 3rem;
+            padding: 1.5rem;
+            border-top: 2px solid rgba(139, 92, 246, 0.3);
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            position: relative;
+            clear: both;
+        }
+
+        .start-stream-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(45deg, #22c55e, #16a34a);
+            border: none;
+            border-radius: 0.75rem;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .start-stream-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
+        }
+
+        .start-stream-btn:disabled {
+            background: linear-gradient(45deg, #6b7280, #4b5563);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .streaming-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .toolbar-btn {
+            padding: 0.5rem 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.375rem;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .toolbar-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #374151;
+        }
+
+        .toolbar-btn.success {
+            background: linear-gradient(45deg, #22c55e, #16a34a);
+            border-color: transparent;
+        }
+
+        .toolbar-btn.danger {
+            background: linear-gradient(45deg, #ef4444, #dc2626);
+            border-color: transparent;
+        }
+
+        /* Center Panel */
+        .stream-preview-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .preview-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .preview-header h3 {
+            margin: 0;
+            color: #e5e7eb;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .preview-video {
+            position: relative;
+            aspect-ratio: 16/9;
+            background: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-disabled-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            color: #9ca3af;
+            gap: 12px;
+        }
+
+        .video-disabled-overlay p {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Right Panel */
+        .stream-sidebar {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 1rem 1rem 0 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 1rem;
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .tab-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-btn.active {
+            color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+        }
+
+        .chat-message {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            background: rgba(107, 114, 128, 0.2);
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .chat-message.system {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid #3b82f6;
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 0 6px 6px 0;
+            font-style: italic;
+            color: #3b82f6;
+        }
+
+        .chat-message.user {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 3px solid #10b981;
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 0 6px 6px 0;
+        }
+
+        /* Debug section - hidden by default */
+        .debug-section {
+            display: none;
+        }
+        
+        .debug-section.dev-mode {
+            display: block;
+        }
+        
+        /* Developer mode indicator */
+        .dev-mode-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 9999;
+            display: none;
+        }
+        
+        .dev-mode-indicator.active {
+            display: block;
+        }
+
+        .debug-info {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .debug-success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .debug-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .device-list {
+            margin-left: 20px;
+            font-size: 12px;
+        }
+
+        /* Spacer */
+        .spacer {
+            height: 20px;
+            clear: both;
+        }
+
+        @media (max-width: 1200px) {
+            .streaming-header h1::after {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Developer Mode Indicator -->
+    <div id="dev-mode-indicator" class="dev-mode-indicator">
+        🔧 DEV MODE
+    </div>
+    
+    <div class="artist-streaming-desktop">
+        <!-- Header -->
+        <div class="streaming-header">
+            <h1>Artist Streaming Studio</h1>
+            <div class="stream-status">
+                <div class="status-indicator">
+                    <span id="status-text">Disconnected</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="streaming-main" class="streaming-main">
+            <!-- Left Panel - Stream Setup -->
+            <div class="stream-setup-panel">
+                <!-- Production Camera System Status -->
+                <div class="setup-section">
+                    <h3>Camera System Status</h3>
+                    <div id="camera-system-status" class="camera-system-status initializing">
+                        <div class="status-icon">
+                            <span id="status-icon" class="animate-spin">🔄</span>
+                        </div>
+                        <div class="status-content">
+                            <p><strong>Initializing Camera System...</strong></p>
+                            <p>Detecting cameras and requesting permissions</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setup-section debug-section" id="debug-section">
+                    <h3>Debug Information</h3>
+                    <div id="debug-component" class="debug-info debug-loading">
+                        🔍 Testing media devices...
+                    </div>
+                </div>
+
+                <div class="setup-section">
+                    <h3>Stream Information</h3>
+                    <div class="form-group">
+                        <label>Stream Title *</label>
+                        <input type="text" id="stream-title" placeholder="Enter your stream title">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="stream-description" placeholder="Describe your stream..." rows="3"></textarea>
+                    </div>
+                </div>
+
+                <div class="setup-section">
+                    <h3>Media Sources</h3>
+                    <div class="form-group">
+                        <label>Camera</label>
+                        <select id="camera-select" disabled>
+                            <option value="">No Camera</option>
+                        </select>
+                        <small class="form-help" id="camera-help">Initialize camera system first</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Microphone</label>
+                        <select id="microphone-select" disabled>
+                            <option value="">No Microphone</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="setup-section">
+                    <h3>Stream Quality</h3>
+                    <div class="form-group">
+                        <label>Resolution</label>
+                        <select id="quality-select">
+                            <option value="720p">720p (1280x720)</option>
+                            <option value="1080p" selected>1080p (1920x1080)</option>
+                        </select>
+                    </div>
+                    <div class="spacer"></div>
+                </div>
+
+                <!-- Stream Controls -->
+                <div class="stream-controls">
+                    <button class="start-stream-btn" id="start-stream-btn" disabled>
+                        ▶️ Start Streaming
+                    </button>
+                    
+                    <div class="streaming-toolbar">
+                        <button class="toolbar-btn success" id="cam-btn" disabled>
+                            📷 <span>Cam</span>
+                        </button>
+                        <button class="toolbar-btn success" id="mic-btn" disabled>
+                            🎤 <span>Mic</span>
+                        </button>
+                        <button class="toolbar-btn" id="preview-btn" disabled>
+                            ▶️ <span>Preview</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center - Preview -->
+            <div class="stream-preview-panel">
+                <div class="preview-container">
+                    <div class="preview-header">
+                        <h3>Stream Preview</h3>
+                    </div>
+                    <div class="preview-video">
+                        <video id="video-preview" class="video-preview" autoplay muted playsinline style="display: none;"></video>
+                        <div class="video-disabled-overlay" id="video-disabled">
+                            📹
+                            <p>Camera Disabled</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Chat -->
+            <div class="stream-sidebar">
+                <div class="sidebar-tabs">
+                    <button class="tab-btn active">
+                        💬 Chat
+                    </button>
+                </div>
+                <div class="chat-panel">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="chat-message system">
+                            Production stream chat will appear here when viewers join
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Production Camera System - Standalone Implementation
+        class ProductionCameraSystem {
+            constructor() {
+                this.permissionState = 'unknown';
+                this.maxRetries = 3;
+            }
+
+            log(message, ...args) {
+                console.log(`[CameraSystem] ${message}`, ...args);
+            }
+
+            error(message, ...args) {
+                console.error(`[CameraSystem] ERROR: ${message}`, ...args);
+            }
+
+            async initialize() {
+                this.log('🎬 [Production] Initializing camera system...');
+                
+                try {
+                    await this.validateEnvironment();
+                    const permissionResult = await this.requestPermissionsWithRetry();
+                    if (!permissionResult.success) {
+                        return permissionResult;
+                    }
+                    
+                    const devices = await this.enumerateDevicesEnhanced();
+                    const validatedDevices = await this.validateDevices(devices);
+                    
+                    this.log('✅ [Production] Camera system initialized successfully');
+                    
+                    return {
+                        success: true,
+                        cameras: validatedDevices.cameras || [],
+                        microphones: validatedDevices.microphones || [],
+                        permissionState: this.permissionState
+                    };
+                    
+                } catch (error) {
+                    this.error('Fatal initialization error:', error);
+                    return {
+                        success: false,
+                        error: error,
+                        retry: true
+                    };
+                }
+            }
+
+            async validateEnvironment() {
+                this.log('Validating environment...');
+                if (!window.isSecureContext) {
+                    throw new Error('Camera access requires HTTPS in production');
+                }
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('MediaDevices API not supported');
+                }
+                this.log('Environment validation passed');
+            }
+
+            async requestPermissionsWithRetry() {
+                for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+                    try {
+                        this.log(`Permission attempt ${attempt}/${this.maxRetries}...`);
+                        const result = await this.requestPermissions();
+                        if (result.success) {
+                            this.permissionState = 'granted';
+                            return result;
+                        }
+                        if (attempt < this.maxRetries) {
+                            await this.delay(1000);
+                        }
+                    } catch (error) {
+                        this.log(`Attempt ${attempt} error:`, error.name, error.message);
+                        if (error.name === 'NotAllowedError' && attempt === this.maxRetries) {
+                            this.permissionState = 'denied';
+                            return {
+                                success: false,
+                                error: error,
+                                retryable: false
+                            };
+                        }
+                    }
+                }
+                return {
+                    success: false,
+                    error: new Error('Permission request failed after retries'),
+                    retryable: true
+                };
+            }
+
+            async requestPermissions() {
+                try {
+                    // Try video first, then audio separately to handle device availability
+                    const constraints = { video: true, audio: false };
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    
+                    // Try to add audio if available
+                    try {
+                        const audioStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                        audioStream.getTracks().forEach(track => stream.addTrack(track));
+                    } catch (audioError) {
+                        this.log('Audio not available, continuing with video only:', audioError.message);
+                    }
+                    
+                    stream.getTracks().forEach(track => track.stop());
+                    return { success: true };
+                } catch (error) {
+                    // If no cameras found, try audio only
+                    if (error.name === 'NotFoundError') {
+                        try {
+                            const audioStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                            audioStream.getTracks().forEach(track => track.stop());
+                            this.log('Video devices not found, but audio is available');
+                            return { success: true, videoUnavailable: true };
+                        } catch (audioError) {
+                            throw new Error('No video or audio devices found');
+                        }
+                    }
+                    throw error;
+                }
+            }
+
+            async enumerateDevicesEnhanced() {
+                this.log('Starting device enumeration...');
+                let devices = await navigator.mediaDevices.enumerateDevices();
+                const hasLabels = devices.some(d => d.label && d.label.trim() !== '');
+                if (!hasLabels) {
+                    await this.delay(500);
+                    devices = await navigator.mediaDevices.enumerateDevices();
+                }
+                return devices;
+            }
+
+            async validateDevices(devices) {
+                this.log('Validating devices...');
+                const cameras = [];
+                const microphones = [];
+                
+                for (const device of devices) {
+                    if (device.deviceId && device.deviceId !== 'default') {
+                        const enhanced = {
+                            ...device,
+                            isVirtual: this.isVirtualCamera(device),
+                            displayLabel: device.label || `${device.kind} Device`,
+                            isValidated: false
+                        };
+                        
+                        // Test device availability for cameras
+                        if (device.kind === 'videoinput') {
+                            try {
+                                const testStream = await navigator.mediaDevices.getUserMedia({
+                                    video: { deviceId: { exact: device.deviceId } },
+                                    audio: false
+                                });
+                                testStream.getTracks().forEach(track => track.stop());
+                                enhanced.isValidated = true;
+                                cameras.push(enhanced);
+                                this.log(`✅ Camera validated: ${enhanced.displayLabel}`);
+                            } catch (error) {
+                                this.log(`⚠️ Camera failed validation: ${enhanced.displayLabel} - ${error.message}`);
+                                // Still add it to the list but mark as potentially unavailable
+                                enhanced.displayLabel += ' (May be unavailable)';
+                                cameras.push(enhanced);
+                            }
+                        } else if (device.kind === 'audioinput') {
+                            microphones.push(enhanced);
+                        }
+                    }
+                }
+                
+                // Sort cameras: validated first, then virtual, then others
+                cameras.sort((a, b) => {
+                    if (a.isValidated && !b.isValidated) return -1;
+                    if (!a.isValidated && b.isValidated) return 1;
+                    if (a.isVirtual && !b.isVirtual) return -1;
+                    if (!a.isVirtual && b.isVirtual) return 1;
+                    return 0;
+                });
+                
+                this.log(`Device validation complete: ${cameras.length} cameras, ${microphones.length} microphones`);
+                return { cameras, microphones };
+            }
+
+            isVirtualCamera(device) {
+                const label = (device.label || '').toLowerCase();
+                return ['virtual', 'obs', 'streamlabs'].some(keyword => label.includes(keyword));
+            }
+
+            async createCameraStream(options = {}) {
+                const { deviceId, width = 1280, height = 720 } = options;
+                this.log('Creating camera stream with options:', options);
+                
+                const constraints = {
+                    video: {
+                        width: { ideal: width },
+                        height: { ideal: height }
+                    },
+                    audio: false
+                };
+                
+                try {
+                    if (deviceId && deviceId !== 'default') {
+                        constraints.video.deviceId = { exact: deviceId };
+                    }
+                    
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    this.log('✅ Camera stream created successfully');
+                    return stream;
+                } catch (error) {
+                    // Fallback: try without specific device ID
+                    if (error.name === 'NotFoundError' && deviceId) {
+                        this.log('Specific device not found, trying default camera...');
+                        delete constraints.video.deviceId;
+                        try {
+                            const fallbackStream = await navigator.mediaDevices.getUserMedia(constraints);
+                            this.log('✅ Fallback camera stream created successfully');
+                            return fallbackStream;
+                        } catch (fallbackError) {
+                            this.error('Both specific and default camera failed:', fallbackError);
+                            throw fallbackError;
+                        }
+                    }
+                    throw error;
+                }
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            getDiagnosticInfo() {
+                return {
+                    protocol: window.location.protocol,
+                    hostname: window.location.hostname,
+                    isSecureContext: window.isSecureContext,
+                    permissionState: this.permissionState,
+                    timestamp: new Date().toISOString()
+                };
+            }
+        }
+
+        // Create singleton instance
+        const productionCameraSystem = new ProductionCameraSystem();
+
+        // State variables
+        let cameras = [];
+        let microphones = [];
+        let selectedCamera = '';
+        let selectedMicrophone = '';
+        let currentStream = null;
+        let cameraSystemInitialized = false;
+        let developerMode = false;
+
+        // UI update functions
+        function updateCameraSystemStatus(state, message, error = null) {
+            const statusEl = document.getElementById('camera-system-status');
+            const iconEl = document.getElementById('status-icon');
+            
+            // Null check to prevent errors
+            if (!statusEl || !iconEl) {
+                console.warn('[CameraSystem] Status elements not found in DOM');
+                return;
+            }
+            
+            statusEl.className = `camera-system-status ${state}`;
+            
+            let icon = '🔄';
+            if (state === 'success') icon = '✅';
+            if (state === 'error') icon = '❌';
+            
+            iconEl.innerHTML = icon;
+            iconEl.className = state === 'initializing' ? 'animate-spin' : '';
+            
+            let content = `<p><strong>${message}</strong></p>`;
+            
+            if (state === 'success') {
+                content += `<p>${cameras.length} camera(s), ${microphones.length} microphone(s)</p>`;
+                if (productionCameraSystem.permissionState === 'granted') {
+                    content += `<div class="permission-status">🛡️ <span>Permissions granted</span></div>`;
+                }
+            } else if (state === 'error' && error) {
+                content += `<p>${getCameraErrorMessage(error)}</p>`;
+                content += `<button class="retry-btn" onclick="retryCameraInitialization()">🔄 Retry</button>`;
+                content += `<div class="diagnostic-info">
+                    <details>
+                        <summary>Diagnostic Information</summary>
+                        <pre>${JSON.stringify(productionCameraSystem.getDiagnosticInfo(), null, 2)}</pre>
+                    </details>
+                </div>`;
+            }
+            
+            statusEl.innerHTML = `
+                <div class="status-icon">${icon}</div>
+                <div class="status-content">${content}</div>
+            `;
+        }
+
+        function getCameraErrorMessage(error) {
+            if (!error) return 'Unknown error';
+            if (error.message === 'Camera access requires HTTPS in production') {
+                return 'This site must use HTTPS for camera access.';
+            }
+            if (error.name === 'NotAllowedError') {
+                return 'Camera permission denied. Please allow camera access and refresh.';
+            }
+            if (error.name === 'NotFoundError') {
+                return 'No cameras detected. Please connect a camera, start OBS Virtual Camera, or check if another application is using your camera.';
+            }
+            if (error.name === 'NotReadableError') {
+                return 'Camera is being used by another application. Please close other video applications and try again.';
+            }
+            if (error.message === 'No video or audio devices found') {
+                return 'No media devices detected. Please connect a camera or microphone and refresh the page.';
+            }
+            return error.message || 'Camera system initialization failed';
+        }
+
+        async function initializeProductionCameraSystem() {
+            updateCameraSystemStatus('initializing', 'Initializing Camera System...');
+            
+            try {
+                const result = await productionCameraSystem.initialize();
+                
+                if (result.success) {
+                    cameras = result.cameras || [];
+                    microphones = result.microphones || [];
+                    
+                    updateCameraSystemStatus('success', 'Camera System Ready');
+                    populateDeviceDropdowns(cameras, microphones);
+                    enableCameraControls();
+                    
+                    if (cameras.length > 0) {
+                        selectedCamera = cameras[0].deviceId;
+                        document.getElementById('camera-select').value = selectedCamera;
+                    }
+                    
+                    if (microphones.length > 0) {
+                        selectedMicrophone = microphones[0].deviceId;
+                        document.getElementById('microphone-select').value = selectedMicrophone;
+                    }
+                    
+                    cameraSystemInitialized = true;
+                    updateDebugComponent(result);
+                    
+                } else {
+                    updateCameraSystemStatus('error', 'Camera System Error', result.error);
+                    updateDebugComponent(result);
+                }
+                
+            } catch (error) {
+                updateCameraSystemStatus('error', 'Camera System Error', error);
+                updateDebugComponent({ success: false, error: error });
+            }
+        }
+
+        async function retryCameraInitialization() {
+            await initializeProductionCameraSystem();
+        }
+
+        function enableCameraControls() {
+            document.getElementById('camera-select').disabled = false;
+            document.getElementById('microphone-select').disabled = false;
+            document.getElementById('start-stream-btn').disabled = false;
+            document.getElementById('cam-btn').disabled = false;
+            document.getElementById('mic-btn').disabled = false;
+            document.getElementById('preview-btn').disabled = false;
+            document.getElementById('camera-help').style.display = 'none';
+        }
+
+        function populateDeviceDropdowns(cameras, microphones) {
+            const cameraSelect = document.getElementById('camera-select');
+            const micSelect = document.getElementById('microphone-select');
+            
+            cameraSelect.innerHTML = '<option value="">No Camera</option>';
+            micSelect.innerHTML = '<option value="">No Microphone</option>';
+            
+            cameras.forEach(camera => {
+                const option = document.createElement('option');
+                option.value = camera.deviceId;
+                option.textContent = camera.displayLabel + (camera.isVirtual ? ' (Virtual)' : '');
+                cameraSelect.appendChild(option);
+            });
+            
+            microphones.forEach(mic => {
+                const option = document.createElement('option');
+                option.value = mic.deviceId;
+                option.textContent = mic.displayLabel;
+                micSelect.appendChild(option);
+            });
+        }
+
+        function updateDebugComponent(result) {
+            const debugEl = document.getElementById('debug-component');
+            
+            if (!result.success) {
+                debugEl.className = 'debug-info debug-error';
+                debugEl.innerHTML = `
+                    <h4>❌ Production Camera System Failed</h4>
+                    <p>${result.error?.message || 'Unknown error'}</p>
+                    <button onclick="initializeProductionCameraSystem()">🔄 Retry</button>
+                `;
+                return;
+            }
+            
+            debugEl.className = 'debug-info debug-success';
+            debugEl.innerHTML = `
+                <h4>✅ Production Camera System Active</h4>
+                <p><strong>📷 Cameras:</strong> ${result.cameras?.length || 0}</p>
+                ${result.cameras?.map(camera => `<div class="device-list">• ${camera.displayLabel}</div>`).join('') || ''}
+                <p><strong>🎤 Microphones:</strong> ${result.microphones?.length || 0}</p>
+                ${result.microphones?.map(mic => `<div class="device-list">• ${mic.displayLabel}</div>`).join('') || ''}
+                <button onclick="initializeProductionCameraSystem()">🔄 Refresh</button>
+            `;
+        }
+
+        async function startPreview() {
+            try {
+                if (!cameraSystemInitialized) {
+                    alert('Camera system not ready. Please wait for initialization to complete.');
+                    return;
+                }
+                
+                if (!selectedCamera && cameras.length === 0) {
+                    alert('No cameras available. Please connect a camera or start OBS Virtual Camera.');
+                    return;
+                }
+                
+                // Use first available camera if none selected
+                if (!selectedCamera && cameras.length > 0) {
+                    selectedCamera = cameras[0].deviceId;
+                    document.getElementById('camera-select').value = selectedCamera;
+                }
+                
+                const camera = cameras.find(c => c.deviceId === selectedCamera);
+                if (!camera && cameras.length > 0) {
+                    // Fallback to first available camera
+                    selectedCamera = cameras[0].deviceId;
+                    document.getElementById('camera-select').value = selectedCamera;
+                }
+                
+                const stream = await productionCameraSystem.createCameraStream({
+                    deviceId: selectedCamera,
+                    width: 1280,
+                    height: 720
+                });
+                
+                if (selectedMicrophone) {
+                    try {
+                        const audioStream = await navigator.mediaDevices.getUserMedia({
+                            audio: { deviceId: { exact: selectedMicrophone } },
+                            video: false
+                        });
+                        audioStream.getAudioTracks().forEach(track => stream.addTrack(track));
+                    } catch (audioError) {
+                        console.warn('Audio failed, continuing with video only:', audioError);
+                    }
+                }
+                
+                const videoEl = document.getElementById('video-preview');
+                const overlayEl = document.getElementById('video-disabled');
+                
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
+                }
+                
+                currentStream = stream;
+                videoEl.srcObject = stream;
+                videoEl.style.display = 'block';
+                overlayEl.style.display = 'none';
+                
+                console.log('✅ [Production] Preview started successfully');
+                
+            } catch (error) {
+                console.error('❌ [Production] Preview failed:', error);
+                alert('Camera preview failed: ' + error.message);
+            }
+        }
+
+        async function startStreaming() {
+            const title = document.getElementById('stream-title').value;
+            if (!title.trim()) {
+                alert('Please enter a stream title');
+                return;
+            }
+
+            if (!cameraSystemInitialized) {
+                alert('Camera system not ready. Please initialize cameras first.');
+                return;
+            }
+
+            try {
+                await startPreview();
+                
+                const startBtn = document.getElementById('start-stream-btn');
+                startBtn.innerHTML = '🛑 Stop Streaming';
+                startBtn.onclick = stopStreaming;
+                
+                const statusText = document.getElementById('status-text');
+                statusText.textContent = 'Live';
+                statusText.style.color = '#22c55e';
+                
+                const chatMessages = document.getElementById('chat-messages');
+                const liveMessage = document.createElement('div');
+                liveMessage.className = 'chat-message system';
+                liveMessage.innerHTML = '🔴 <strong>LIVE NOW!</strong> Production stream started';
+                chatMessages.appendChild(liveMessage);
+                
+                console.log('🔴 [Production] Stream started successfully');
+                
+            } catch (error) {
+                console.error('❌ [Production] Stream start failed:', error);
+                alert('Failed to start stream: ' + error.message);
+            }
+        }
+
+        function stopStreaming() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            
+            const videoEl = document.getElementById('video-preview');
+            const overlayEl = document.getElementById('video-disabled');
+            videoEl.style.display = 'none';
+            overlayEl.style.display = 'flex';
+            videoEl.srcObject = null;
+            
+            const startBtn = document.getElementById('start-stream-btn');
+            startBtn.innerHTML = '▶️ Start Streaming';
+            startBtn.onclick = startStreaming;
+            
+            const statusText = document.getElementById('status-text');
+            statusText.textContent = 'Disconnected';
+            statusText.style.color = '#6b7280';
+            
+            console.log('✅ [Production] Stream stopped');
+        }
+
+        function toggleDeveloperMode() {
+            developerMode = !developerMode;
+            const debugSection = document.getElementById('debug-section');
+            const devIndicator = document.getElementById('dev-mode-indicator');
+            
+            if (developerMode) {
+                debugSection.classList.add('dev-mode');
+                devIndicator.classList.add('active');
+            } else {
+                debugSection.classList.remove('dev-mode');
+                devIndicator.classList.remove('active');
+            }
+            
+            localStorage.setItem('iframeDeveloperMode', developerMode.toString());
+        }
+
+        function initializeDeveloperMode() {
+            const savedDevMode = localStorage.getItem('iframeDeveloperMode') === 'true';
+            if (savedDevMode) {
+                developerMode = false;
+                toggleDeveloperMode();
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDeveloperMode();
+            initializeProductionCameraSystem();
+            
+            document.getElementById('camera-select').addEventListener('change', (e) => {
+                selectedCamera = e.target.value;
+            });
+            
+            document.getElementById('microphone-select').addEventListener('change', (e) => {
+                selectedMicrophone = e.target.value;
+            });
+            
+            document.getElementById('preview-btn').addEventListener('click', startPreview);
+            document.getElementById('start-stream-btn').addEventListener('click', startStreaming);
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.altKey && e.key === 'd') {
+                e.preventDefault();
+                toggleDeveloperMode();
+            }
+        });
+    </script>
+</body>
+</html>

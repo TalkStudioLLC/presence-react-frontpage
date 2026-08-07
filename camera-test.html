@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Device Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #0f0f23;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: rgba(34, 197, 94, 0.2); }
+        .error { background: rgba(239, 68, 68, 0.2); }
+        .warning { background: rgba(245, 158, 11, 0.2); }
+        .device-list {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background: #8b5cf6;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #7c3aed;
+        }
+        video {
+            width: 100%;
+            max-width: 400px;
+            background: black;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TalkStudio Camera Test</h1>
+        <p>This page tests camera detection for production environment issues.</p>
+        
+        <div id="status" class="status">Ready to test...</div>
+        
+        <button onclick="testDevices()">Test Device Detection</button>
+        <button onclick="testCameraAccess()">Test Camera Access</button>
+        <button onclick="clearStatus()">Clear</button>
+        
+        <div id="device-info"></div>
+        
+        <video id="preview" autoplay muted playsinline style="display: none;"></video>
+        
+        <div id="logs" style="margin-top: 20px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;"></div>
+    </div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const deviceInfoEl = document.getElementById('device-info');
+        const previewEl = document.getElementById('preview');
+        const logsEl = document.getElementById('logs');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.style.color = type === 'error' ? '#ef4444' : type === 'warn' ? '#f59e0b' : '#e5e7eb';
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logsEl.appendChild(logEntry);
+            logsEl.scrollTop = logsEl.scrollHeight;
+            console.log(message);
+        }
+        
+        function setStatus(message, type = 'info') {
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            log(message, type);
+        }
+        
+        function clearStatus() {
+            statusEl.textContent = 'Status cleared';
+            statusEl.className = 'status';
+            deviceInfoEl.innerHTML = '';
+            previewEl.style.display = 'none';
+            logsEl.innerHTML = '';
+        }
+        
+        async function testDevices() {
+            try {
+                setStatus('Testing device detection...', 'info');
+                
+                // Environment info
+                log(`Environment: ${window.location.protocol}//${window.location.host}`);
+                log(`User Agent: ${navigator.userAgent}`);
+                log(`MediaDevices API available: ${!!navigator.mediaDevices}`);
+                log(`EnumerateDevices available: ${!!navigator.mediaDevices?.enumerateDevices}`);
+                
+                if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                    throw new Error('MediaDevices API not supported');
+                }
+                
+                // Initial device scan
+                let devices = await navigator.mediaDevices.enumerateDevices();
+                log(`Initial device scan: ${devices.length} devices found`);
+                
+                const hasLabels = devices.some(device => device.label && device.label.trim() !== '');
+                log(`Device labels available: ${hasLabels}`);
+                
+                if (!hasLabels) {
+                    log('Requesting permissions to get device labels...');
+                    try {
+                        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                        log('✅ Permission granted');
+                        
+                        tempStream.getTracks().forEach(track => {
+                            track.stop();
+                            log(`Stopped temporary ${track.kind} track`);
+                        });
+                        
+                        devices = await navigator.mediaDevices.enumerateDevices();
+                        log(`Re-scanned devices: ${devices.length} devices found`);
+                    } catch (permError) {
+                        log(`⚠️ Permission request failed: ${permError.name} - ${permError.message}`, 'warn');
+                    }
+                }
+                
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                const audioDevices = devices.filter(device => device.kind === 'audioinput');
+                const outputDevices = devices.filter(device => device.kind === 'audiooutput');
+                
+                log(`📷 Video devices: ${videoDevices.length}`);
+                log(`🎤 Audio input devices: ${audioDevices.length}`);
+                log(`🔊 Audio output devices: ${outputDevices.length}`);
+                
+                let html = '<h3>Detected Devices:</h3>';
+                
+                if (videoDevices.length > 0) {
+                    html += '<h4>📷 Cameras:</h4><ul>';
+                    videoDevices.forEach((device, index) => {
+                        const label = device.label || `Camera ${index + 1}`;
+                        html += `<li><strong>${label}</strong><br>ID: ${device.deviceId}<br>Group: ${device.groupId || 'N/A'}</li>`;
+                        log(`📷 Camera: ${label} (${device.deviceId})`);
+                    });
+                    html += '</ul>';
+                } else {
+                    html += '<p style="color: #ef4444;">❌ No cameras detected</p>';
+                }
+                
+                if (audioDevices.length > 0) {
+                    html += '<h4>🎤 Microphones:</h4><ul>';
+                    audioDevices.forEach((device, index) => {
+                        const label = device.label || `Microphone ${index + 1}`;
+                        html += `<li><strong>${label}</strong><br>ID: ${device.deviceId}</li>`;
+                        log(`🎤 Microphone: ${label} (${device.deviceId})`);
+                    });
+                    html += '</ul>';
+                }
+                
+                deviceInfoEl.innerHTML = html;
+                
+                if (videoDevices.length > 0) {
+                    setStatus(`✅ Device detection successful - ${videoDevices.length} camera(s) found`, 'success');
+                } else {
+                    setStatus('⚠️ No cameras detected', 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Device detection failed: ${error.name} - ${error.message}`, 'error');
+                setStatus(`❌ Device detection failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCameraAccess() {
+            try {
+                setStatus('Testing camera access...', 'info');
+                
+                const constraints = {
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    },
+                    audio: false
+                };
+                
+                log('Requesting camera access with constraints: ' + JSON.stringify(constraints));
+                
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                log('✅ Camera access successful');
+                
+                const videoTrack = stream.getVideoTracks()[0];
+                if (videoTrack) {
+                    const settings = videoTrack.getSettings();
+                    log(`Camera settings: ${JSON.stringify(settings)}`);
+                    log(`Camera label: ${videoTrack.label}`);
+                    
+                    previewEl.srcObject = stream;
+                    previewEl.style.display = 'block';
+                    
+                    setStatus('✅ Camera preview active', 'success');
+                    
+                    // Stop stream after 10 seconds
+                    setTimeout(() => {
+                        stream.getTracks().forEach(track => track.stop());
+                        previewEl.srcObject = null;
+                        previewEl.style.display = 'none';
+                        log('🛑 Camera stream stopped');
+                        setStatus('Camera test completed', 'info');
+                    }, 10000);
+                } else {
+                    throw new Error('No video track in stream');
+                }
+                
+            } catch (error) {
+                log(`❌ Camera access failed: ${error.name} - ${error.message}`, 'error');
+                
+                let userMessage = 'Camera access failed';
+                if (error.name === 'NotAllowedError') {
+                    userMessage = 'Camera permission denied';
+                } else if (error.name === 'NotFoundError') {
+                    userMessage = 'No camera found';
+                } else if (error.name === 'NotReadableError') {
+                    userMessage = 'Camera is busy';
+                }
+                
+                setStatus(`❌ ${userMessage}: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run device test on page load
+        window.addEventListener('load', () => {
+            log('Page loaded, environment ready for testing');
+            // Uncomment to auto-test on load:
+            // testDevices();
+        });
+    </script>
+</body>
+</html>
