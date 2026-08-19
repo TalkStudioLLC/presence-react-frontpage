@@ -1,0 +1,63 @@
+# https://talkstudio.space/robots.txt
+#
+# Everything is crawlable by default. The Disallow list below covers routes
+# that are behind auth, are pure noise (debug/test harnesses), or are
+# per-user/per-session URLs that would waste crawl budget and surface thin,
+# duplicated pages in search results.
+
+User-agent: *
+Allow: /
+
+# --- Auth and account flows ---
+Disallow: /login
+Disallow: /signup
+Disallow: /signup-debug
+Disallow: /forgot-password
+Disallow: /convert-account
+Disallow: /setup-username
+Disallow: /unauthorized
+
+# --- Checkout and payment ---
+Disallow: /payment
+Disallow: /checkout/
+Disallow: /success
+Disallow: /subscription-success
+Disallow: /cancel
+
+# --- Admin and gated tooling ---
+Disallow: /admin
+Disallow: /predict/api-settings
+
+# --- Live/session URLs: ephemeral, per-room, not useful as search results ---
+Disallow: /room/
+Disallow: /stream
+Disallow: /stream/
+Disallow: /events/studio
+Disallow: /events/server
+Disallow: /create-room
+Disallow: /create-meeting
+Disallow: /create-post
+Disallow: /artist-edit-profile
+Disallow: /artist-streaming
+
+# --- On-site search results (thin/duplicate pages) ---
+Disallow: /search
+
+# --- Debug and test harnesses ---
+Disallow: /test
+Disallow: /test-route
+Disallow: /basic-dev-check
+Disallow: /simple-dev
+Disallow: /debug-test
+Disallow: /device-debug
+Disallow: /dj-debug-inline
+Disallow: /dj-studio-polished-test
+Disallow: /video-diagnostic
+Disallow: /quick-video-test
+Disallow: /audio-test
+Disallow: /audio-profile-test
+Disallow: /camera-test
+Disallow: /camera-test.html
+Disallow: /streaming-iframe.html
+
+Sitemap: https://talkstudio.space/sitemap.xml
