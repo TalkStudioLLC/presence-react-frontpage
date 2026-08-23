@@ -61,3 +61,8 @@ Disallow: /camera-test.html
 Disallow: /streaming-iframe.html
 
 Sitemap: https://talkstudio.space/sitemap.xml
+
+# The blog is a WordPress app proxied in at /blog (see wordpress/README.md).
+# It needs its own Sitemap line here: robots.txt is only ever read from the
+# domain root, so a subdirectory install cannot publish one of its own.
+Sitemap: https://talkstudio.space/blog/wp-sitemap.xml
