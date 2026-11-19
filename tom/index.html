@@ -9,6 +9,13 @@
 <meta property="og:title" content="Tom Berchenbriter | Resume &amp; Proposal for Cedar Crossing">
 <meta property="og:description" content="Systems, marketing and creative leader ready to help Cedar Crossing run reliably, stay compliant and bring guests back.">
 <meta property="og:type" content="profile">
+<!-- Google Analytics (GA4) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2J9T4YB9HN"></script>
+<script>
+  window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
+  gtag('js',new Date());
+  gtag('config','G-2J9T4YB9HN',{page_title:'Tom - Cedar Crossing proposal'});
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -315,6 +322,28 @@
       v.src=URL.createObjectURL(new Blob([b],{type:'video/mp4'}));
       v.addEventListener('loadedmetadata',function(){ if(v.currentTime===0) v.currentTime=0.5; },{once:true});
     }).catch(function(){ document.getElementById('video').style.display='none'; });
+  })();
+</script>
+<script>
+  // Event tracking: video plays/progress and contact clicks
+  (function(){
+    function ev(name,params){ try{ gtag('event',name,Object.assign({page:'tom'},params||{})); }catch(e){} }
+    var v=document.querySelector('#video video');
+    if(v){
+      var marks={25:false,50:false,75:false,100:false}, started=false;
+      v.addEventListener('play',function(){ if(!started){started=true; ev('pitch_video_play');} });
+      v.addEventListener('timeupdate',function(){
+        if(!v.duration) return; var pct=v.currentTime/v.duration*100;
+        [25,50,75].forEach(function(m){ if(pct>=m && !marks[m]){ marks[m]=true; ev('pitch_video_progress',{percent:m}); } });
+      });
+      v.addEventListener('ended',function(){ if(!marks[100]){ marks[100]=true; ev('pitch_video_progress',{percent:100}); } });
+    }
+    document.addEventListener('click',function(e){
+      var a=e.target.closest('a'); if(!a) return; var h=a.getAttribute('href')||'';
+      if(h.indexOf('calendly.com/tom-talkstudio/vip')>-1) ev('vip_session_click');
+      else if(h.indexOf('tel:')===0) ev('call_click');
+      else if(h.indexOf('mailto:')===0) ev('email_click');
+    });
   })();
 </script>
 </body>
