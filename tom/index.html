@@ -328,21 +328,36 @@
   // Event tracking: video plays/progress and contact clicks
   (function(){
     function ev(name,params){ try{ gtag('event',name,Object.assign({page:'tom'},params||{})); }catch(e){} }
+    // Telegram alerts (skipped on Tom's own devices: visit /tom?me=1 once to mute, ?me=0 to unmute)
+    var me=false;
+    try{
+      var q=new URLSearchParams(location.search);
+      if(q.get('me')==='1') localStorage.setItem('tom_me','1');
+      if(q.get('me')==='0') localStorage.removeItem('tom_me');
+      me=localStorage.getItem('tom_me')==='1';
+    }catch(e){}
+    function alertTom(kind){
+      if(me) return;
+      try{ if(sessionStorage.getItem('al_'+kind)) return; sessionStorage.setItem('al_'+kind,'1'); }catch(e){}
+      var u='https://resume-319-5342.twil.io/notify?e='+kind+(document.referrer?'&ref='+encodeURIComponent(document.referrer):'');
+      (new Image()).src=u;
+    }
+    alertTom('open');
     var v=document.querySelector('#video video');
     if(v){
       var marks={25:false,50:false,75:false,100:false}, started=false;
-      v.addEventListener('play',function(){ if(!started){started=true; ev('pitch_video_play');} });
+      v.addEventListener('play',function(){ if(!started){started=true; ev('pitch_video_play'); alertTom('play');} });
       v.addEventListener('timeupdate',function(){
         if(!v.duration) return; var pct=v.currentTime/v.duration*100;
         [25,50,75].forEach(function(m){ if(pct>=m && !marks[m]){ marks[m]=true; ev('pitch_video_progress',{percent:m}); } });
       });
-      v.addEventListener('ended',function(){ if(!marks[100]){ marks[100]=true; ev('pitch_video_progress',{percent:100}); } });
+      v.addEventListener('ended',function(){ if(!marks[100]){ marks[100]=true; ev('pitch_video_progress',{percent:100}); alertTom('finish'); } });
     }
     document.addEventListener('click',function(e){
       var a=e.target.closest('a'); if(!a) return; var h=a.getAttribute('href')||'';
-      if(h.indexOf('calendly.com/tom-talkstudio/vip')>-1) ev('vip_session_click');
-      else if(h.indexOf('tel:')===0) ev('call_click');
-      else if(h.indexOf('mailto:')===0) ev('email_click');
+      if(h.indexOf('calendly.com/tom-talkstudio/vip')>-1) { ev('vip_session_click'); alertTom('vip'); }
+      else if(h.indexOf('tel:')===0) { ev('call_click'); alertTom('call'); }
+      else if(h.indexOf('mailto:')===0) { ev('email_click'); alertTom('email'); }
     });
   })();
 </script>
