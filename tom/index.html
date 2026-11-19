@@ -311,7 +311,7 @@
   // Load the pitch video as a blob (the host does not support HTTP range requests).
   (function(){
     var v=document.querySelector('#video video'); if(!v) return;
-    fetch('/tom/tom-cedar-crossing.mp4').then(function(r){return r.blob();}).then(function(b){
+    fetch('/tom/tom-cedar-crossing.mp4?v=2').then(function(r){return r.blob();}).then(function(b){
       v.src=URL.createObjectURL(new Blob([b],{type:'video/mp4'}));
       v.addEventListener('loadedmetadata',function(){ if(v.currentTime===0) v.currentTime=0.5; },{once:true});
     }).catch(function(){ document.getElementById('video').style.display='none'; });
