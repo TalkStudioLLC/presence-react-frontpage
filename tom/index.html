@@ -155,7 +155,7 @@
     <div class="wrap">
       <div class="eyebrow">Summary</div>
       <h2>The back of the house and the front of the house.</h2>
-      <div class="video" id="video" style="margin:24px 0 28px;max-width:860px"><video controls preload="metadata" playsinline poster="" src="/tom/tom-cedar-crossing.mp4#t=0.5"></video></div>
+      <div class="video" id="video" style="margin:24px 0 28px;max-width:860px"><video controls playsinline preload="auto"></video></div>
       <p>I'm a Cedar Rapids local with 25+ years building and running the technology that businesses can't afford to have go down. At Alarm.com I spent 8 years in 24/7 operations for a platform millions of people rely on, leading projects, enforcing change control and keeping systems compliant and patched. I've managed a team of 4 building a platform, and I run my own marketing and software company, so I understand both the back of the house and the guest-facing side.</p>
       <p>A new casino lives or dies on three things: uptime on the floor, airtight compliance, and getting guests through the door and back again. My background covers all three, including the creative side: promotions, social media, video and print that get people talking and coming back. I've applied for floor roles and I'm glad to start there, but this page lays out the full range of what I can bring to Cedar Crossing.</p>
     </div>
@@ -307,5 +307,15 @@
 </footer>
 
 
+<script>
+  // Load the pitch video as a blob (the host does not support HTTP range requests).
+  (function(){
+    var v=document.querySelector('#video video'); if(!v) return;
+    fetch('/tom/tom-cedar-crossing.mp4').then(function(r){return r.blob();}).then(function(b){
+      v.src=URL.createObjectURL(new Blob([b],{type:'video/mp4'}));
+      v.addEventListener('loadedmetadata',function(){ if(v.currentTime===0) v.currentTime=0.5; },{once:true});
+    }).catch(function(){ document.getElementById('video').style.display='none'; });
+  })();
+</script>
 </body>
 </html>
