@@ -74,7 +74,7 @@
   .note{margin-top:20px;font-size:14px;color:#cfc7b8}
 
   /* VIDEO */
-  .video{display:none;margin-top:28px;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:16/9}
+  .video{display:block;margin-top:28px;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:16/9}
   .video video{width:100%;height:100%;display:block}
 
   /* 90 DAYS */
@@ -155,6 +155,7 @@
     <div class="wrap">
       <div class="eyebrow">Summary</div>
       <h2>The back of the house and the front of the house.</h2>
+      <div class="video" id="video" style="margin:24px 0 28px;max-width:860px"><video controls preload="metadata" playsinline poster="" src="/tom/tom-cedar-crossing.mp4#t=0.5"></video></div>
       <p>I'm a Cedar Rapids local with 25+ years building and running the technology that businesses can't afford to have go down. At Alarm.com I spent 8 years in 24/7 operations for a platform millions of people rely on, leading projects, enforcing change control and keeping systems compliant and patched. I've managed a team of 4 building a platform, and I run my own marketing and software company, so I understand both the back of the house and the guest-facing side.</p>
       <p>A new casino lives or dies on three things: uptime on the floor, airtight compliance, and getting guests through the door and back again. My background covers all three, including the creative side: promotions, social media, video and print that get people talking and coming back. I've applied for floor roles and I'm glad to start there, but this page lays out the full range of what I can bring to Cedar Crossing.</p>
     </div>
@@ -188,7 +189,6 @@
       <h2>Bring the guests. Then bring them back.</h2>
       <p class="lead">Through Talk Studio, I already plan and produce promotions and digital media for local businesses. I can do the same for Cedar Crossing, on staff in a marketing or creative role, or with Talk Studio as a partner.</p>
 
-      <div class="video" id="video"><video controls preload="metadata" playsinline src="/tom/tom-cedar-crossing.mp4"></video></div>
 
       <div class="two">
         <ul class="pill-list">
@@ -306,13 +306,6 @@
   <div class="wrap">&copy; 2026 Tom Berchenbriter &middot; Talk Studio LLC &middot; <a href="/privacy">Privacy Policy</a> &middot; <a href="/terms">Terms &amp; Conditions</a></div>
 </footer>
 
-<script>
-  // Show the video block only once the video file exists.
-  (function(){
-    var box=document.getElementById('video'); if(!box) return;
-    var v=box.querySelector('video');
-    v.addEventListener('loadedmetadata',function(){box.style.display='block';});
-  })();
-</script>
+
 </body>
 </html>
